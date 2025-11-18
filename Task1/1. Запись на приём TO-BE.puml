@@ -1,0 +1,263 @@
+@startuml Patient registration TO-BE
+title Dataflow Diagram TO-BE: Процесс регистрации новых клиентов и записи на приём (целевое состояние)
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam database {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam actor {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam node {
+  BackgroundColor #F0F0F0
+  BorderColor Black
+}
+
+' === УРОВЕНЬ 1: ВНЕШНИЕ СУЩНОСТИ ===
+actor "Пациент" as patient
+actor "Сотрудник ресепшена" as reception
+
+' === УРОВЕНЬ 2: ШЛЮЗ И АУТЕНТИФИКАЦИЯ ===
+node "1. API Gateway\n(TLS 1.3)" as api_gateway
+node "2. IAM Система\n(RBAC)" as iam
+
+' === УРОВЕНЬ 3: ПОРТАЛЫ ===
+rectangle "3. Портал для пациентов" as patient_portal {
+  process "Портал пациентов" as patient_portal_proc
+}
+
+rectangle "4. Портал для сотрудников" as staff_portal {
+  process "Портал сотрудников" as staff_portal_proc
+}
+
+' === УРОВЕНЬ 4: БИЗНЕС-СЕРВИСЫ ===
+rectangle "5. Сервис записи на приём" as booking_group {
+  process "Сервис записи\n(RBAC)" as booking_service
+  database "База записей\n(шифрование)" as booking_db
+}
+
+rectangle "6. Сервис пациентов" as patient_group {
+  process "Сервис пациентов\n(RBAC)" as patient_service
+  database "База пациентов\n(шифрование)" as patient_db
+}
+
+rectangle "7. Сервис документов" as doc_group {
+  process "Сервис документов\n(RBAC)" as doc_service
+  database "Хранилище документов\n(шифрование)" as doc_store
+}
+
+' === УРОВЕНЬ 5: DATA CATALOG И ВЕРСИОНИРОВАНИЕ ===
+rectangle "8. Nessie Data Catalog" as nessie_group {
+  process "Nessie\nВерсионирование" as nessie
+  database "Метаданные\nи коммиты" as metadata_db
+}
+
+' === УРОВЕНЬ 6: УВЕДОМЛЕНИЯ ===
+rectangle "9. Сервис уведомлений" as notification_group {
+  process "Сервис уведомлений" as notification_service
+}
+
+' === УРОВЕНЬ 7: МОНИТОРИНГ И АНАЛИТИКА ===
+rectangle "10. Система мониторинга" as monitoring_group {
+  process "Система мониторинга\n(аудит, алертинг)" as monitoring_system
+  database "Логи действий\n(аудит)" as audit_logs
+}
+
+database "Data Lake\n(BI, ML, AI)" as data_lake
+
+' === ВЕРТИКАЛЬНОЕ РАСПОЛОЖЕНИЕ ===
+patient -[hidden]down- api_gateway
+api_gateway -[hidden]down- patient_portal
+patient_portal -[hidden]down- booking_group
+booking_group -[hidden]down- nessie_group
+nessie_group -[hidden]down- notification_group
+notification_group -[hidden]down- monitoring_group
+monitoring_group -[hidden]down- data_lake
+
+reception -[hidden]down- api_gateway
+api_gateway -[hidden]down- staff_portal
+staff_portal -[hidden]down- patient_group
+patient_group -[hidden]down- nessie_group
+
+staff_portal -[hidden]down- doc_group
+doc_group -[hidden]down- nessie_group
+
+iam -[hidden]right- api_gateway
+
+' === ВНУТРЕННИЕ СВЯЗИ ===
+booking_service --> booking_db
+patient_service --> patient_db
+doc_service --> doc_store
+monitoring_system --> audit_logs
+nessie --> metadata_db
+
+' === ВЕРТИКАЛЬНЫЕ ПОТОКИ ДАННЫХ ===
+
+' Уровень 1 -> 2: Внешний доступ
+patient --> api_gateway
+note on link: TLS 1.3
+
+reception --> api_gateway
+note on link: TLS 1.3
+
+' Уровень 2 -> 3: Аутентификация и порталы
+api_gateway --> iam
+note on link: <b>1→2.</b> Проверка прав доступа (RBAC)
+
+api_gateway --> patient_portal
+note on link: TLS 1.3
+
+api_gateway --> staff_portal
+note on link: TLS 1.3
+
+' Уровень 3 -> 4: Бизнес-процессы от пациентов
+patient_portal --> booking_service
+note on link: <b>3→5.</b> <color:#44AAFF>Врач, дата/время</color>\nЗапись (RBAC)
+
+patient_portal --> patient_service
+note on link: <b>3→6.</b> <color:#FFAA44>ФИО, тел., email</color>\nРегистрация (RBAC)
+
+patient_portal -right-> doc_service
+note on link: <b>3→7.</b> <color:#FF4444>Сканы, анализы</color>\nДокументы (RBAC)
+
+' Уровень 3 -> 4: Бизнес-процессы от сотрудников
+staff_portal --> booking_service
+note on link: <b>4→5.</b> <color:#44AAFF>Врач, дата/время</color>\nСоздание записи (RBAC)
+
+staff_portal --> patient_service
+note on link: <b>4→6.</b> <color:#FFAA44>ФИО, тел., email</color>\nВвод данных (RBAC)
+
+staff_portal -left-> doc_service
+note on link: <b>4→7.</b> <color:#FF4444>Сканы, анализы</color>\nОбработка (RBAC)
+
+' Уровень 4 -> 5: Версионирование данных
+booking_service -down-> nessie 
+note on link: <b>5→8.</b> Метаданные записей
+
+patient_service -down-> nessie
+note on link: <b>6→8.</b> Данные с тегами PII
+
+doc_service -down-> nessie
+note on link: <b>7→8.</b> Документы с тегами
+
+' Уровень 5 -> 4: Политики доступа
+nessie -up-> booking_service
+note on link: <b>8→5.</b> Политики доступа
+
+nessie -up-> patient_service
+note on link: <b>8→6.</b> Политики на основе тегов
+
+nessie -up-> doc_service
+note on link: <b>8→7.</b> Версионированные политики
+
+' Уровень 4 -> 6: Уведомления
+booking_service -down-> notification_service
+note on link: <b>5→9.</b> Уведомления о записи
+
+' Уровень 6 -> 1: Обратная связь
+notification_service -up-> patient
+note on link: <b>9→1.</b> Уведомление пациенту
+
+' Уровень 4 -> 7: Мониторинг
+booking_service -down-> monitoring_system
+note on link: <b>5→10.</b> Логи записей
+
+patient_service -down-> monitoring_system
+note on link: <b>6→10.</b> Логи доступа
+
+doc_service -down-> monitoring_system
+note on link: <b>7→10.</b> Логи документов
+
+' Уровень 5 -> 7: История изменений
+nessie -down-> monitoring_system
+note on link: <b>8→10.</b> История изменений
+
+' Уровень 7 -> 7: Аналитика
+monitoring_system -right-> data_lake
+note on link: <b>10→DL.</b> Агрегированные логи
+
+patient_service -right-> data_lake
+note on link: <b>6→DL.</b> Анонимизированные данные
+
+booking_service -right-> data_lake
+note on link: <b>5→DL.</b> Агрегированные данные
+
+nessie -right-> data_lake
+note on link: <b>8→DL.</b> Версионированные метаданные
+
+' === ЛЕГЕНДА КЛАССИФИКАЦИИ ДАННЫХ И РЕШЕНИЙ ===
+legend right
+  <b>КЛАССИФИКАЦИЯ ДАННЫХ</b>
+  
+  <color:#FF4444><b>█ ВЫСОКИЙ РИСК (Красный): Особо чувствительные данные</b></color>
+  <color:#FF4444>Медицинская история, диагнозы, анализы, скан паспорта, удостоверения личности</color>
+  <color:#FF4444>Диагноз, Жалобы и симптомы, Анамнез, Назначения и рекомендации</color>
+  <color:#FF4444>Скан паспорта, Результаты обследований, Анализы, Снимки</color>
+
+  <color:#FFAA44><b>█ СРЕДНИЙ РИСК (Оранжевый): Персональные данные (PII)</b></color>
+  <color:#FFAA44>ФИО, Дата рождения, Телефон, Email, Адрес</color>
+
+  <color:#44AAFF><b>█ НИЗКИЙ РИСК (Синий): Бизнес-данные</b></color>
+  <color:#44AAFF>Расписание врачей, дата/время приёма</color>
+  <color:#44AAFF>Врач, Дата/время приёма</color>
+
+  <b>НОМЕРА СЕРВИСОВ:</b>
+  1. API Gateway
+  2. IAM Система
+  3. Портал пациентов
+  4. Портал сотрудников
+  5. Сервис записи
+  6. Сервис пациентов
+  7. Сервис документов
+  8. Nessie Data Catalog
+  9. Сервис уведомлений
+  10. Система мониторинга
+  DL. Data Lake
+
+  <b>УСТРАНЁННЫЕ ПРОБЛЕМЫ</b>
+
+  <b>Безопасное хранение конфиденциальных данных:</b>
+  • Шифрование PII и медицинских данных (специальная категория ПДн)
+  • Замена небезопасных форматов (Excel, Word) на защищенные БД
+  • Тегирование конфиденциальных данных и метаданных
+  • Устранение Data Minimization - убраны ФИО и дата рождения из названий папок
+
+  <b>Контроль доступа и разграничение прав (RBAC):</b>
+  • RBAC для разграничения прав пациентов, врачей и сотрудников
+  • Изоляция данных между пациентами
+  • Централизованная аутентификация через IAM
+  • Соблюдение принципа врачебной тайны - ограничение доступа после лечения
+
+  <b>Аудит и мониторинг:</b>
+  • Сквозной аудит всех действий пользователей
+  • Мониторинг несанкционированного доступа
+  • Неизменяемые логи действий для полного трейсинга
+
+  <b>Защита целостности и доступности данных:</b>
+  • Git-like версионирование PII и медицинских данных через Nessie
+  • Автоматическое резервное копирование и восстановление
+  • Защита от случайного перезаписывания или удаления информации
+  • Тегирование с контролем версий для compliance
+
+  <b>Защита процессов и архитектуры:</b>
+  • Защита от утечек через API Gateway с TLS 1.3
+  • Шифрование всех сетевых соединений
+  • Безопасная передача данных между компонентами
+  • Защита от шифровальщиков через распределенное хранение
+
+  <b>Управление данными и аналитика:</b>
+  • Ликвидация ручного ввода в Excel
+  • Механизм псевдонимизации для аналитики и BI/ML/AI систем
+  • Автоматические уведомления
+  • Реализация права на удаление данных (right to be forgotten)
+  • Единые форматы данных для автоматизации процессов
+end legend
+
+@enduml
