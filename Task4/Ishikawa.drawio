@@ -1,0 +1,168 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.2.8 Chrome/140.0.7339.240 Electron/38.4.0 Safari/537.36" version="28.2.8">
+  <diagram name="Ishikawa" id="aEsjUioYygeDyswxvGD8">
+    <mxGraphModel dx="2277" dy="1951" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="main_problem" value="Узкие места и риски при миграции с монолита на микросервисы" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#333333;fontSize=16;fontColor=#333333;" parent="1" vertex="1">
+          <mxGeometry x="1480" y="410" width="320" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="infrastructure" value="Инфраструктура" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;" parent="1" vertex="1">
+          <mxGeometry x="707" y="210" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_infra_main" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#1976D2;" parent="1" source="infrastructure" target="main_problem" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="767" y="320" />
+              <mxPoint x="1550" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="infra1" value="• Слабая мощность серверов" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;" parent="1" vertex="1">
+          <mxGeometry x="517" y="50" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_infra1" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#1976D2;" parent="1" source="infra1" target="infrastructure" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="infra2" value="• Отсутствие балансировки нагрузки" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;" parent="1" vertex="1">
+          <mxGeometry x="517" y="90" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_infra2" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#1976D2;" parent="1" source="infra2" target="infrastructure" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="infra3" value="• Нет кластеризации и автоскейлинга" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;" parent="1" vertex="1">
+          <mxGeometry x="517" y="130" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_infra3" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#1976D2;" parent="1" source="infra3" target="infrastructure" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="infra4" value="• Нет облачной инфраструктуры" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;" parent="1" vertex="1">
+          <mxGeometry x="517" y="170" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_infra4" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#1976D2;" parent="1" source="infra4" target="infrastructure" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="software" value="Программное обеспечение" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#F57C00;" parent="1" vertex="1">
+          <mxGeometry x="510" y="420" width="160" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_soft_main" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#F57C00;" parent="1" source="software" target="main_problem" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="soft1" value="• Монолитная архитектура" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#F57C00;" parent="1" vertex="1">
+          <mxGeometry x="320" y="470" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_soft1" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#F57C00;" parent="1" source="soft1" target="software" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="soft2" value="• Сложность декомпозиции" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#F57C00;" parent="1" vertex="1">
+          <mxGeometry x="320" y="510" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_soft2" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#F57C00;" parent="1" source="soft2" target="software" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="soft3" value="• Нет API-шлюза" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#F57C00;" parent="1" vertex="1">
+          <mxGeometry x="320" y="550" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_soft3" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#F57C00;" parent="1" source="soft3" target="software" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="soft4" value="• Разные форматы данных" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#F57C00;" parent="1" vertex="1">
+          <mxGeometry x="320" y="590" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_soft4" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#F57C00;" parent="1" source="soft4" target="software" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="integration" value="Интеграция" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;" parent="1" vertex="1">
+          <mxGeometry x="1275" y="230" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_int_main" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#388E3C;" parent="1" source="integration" target="main_problem" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="int1" value="• Нет единого API для внешних систем" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;" parent="1" vertex="1">
+          <mxGeometry x="1085" y="40" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_int1" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#388E3C;" parent="1" source="int1" target="integration" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="int2" value="• Сложность отслеживания ошибок" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;" parent="1" vertex="1">
+          <mxGeometry x="1085" y="90" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_int2" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#388E3C;" parent="1" source="int2" target="integration" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="int3" value="• Проблемы миграции данных" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;" parent="1" vertex="1">
+          <mxGeometry x="1085" y="140" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_int3" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#388E3C;" parent="1" source="int3" target="integration" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="int4" value="• Интеграция с legacy (Excel)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;" parent="1" vertex="1">
+          <mxGeometry x="1085" y="190" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_int4" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#388E3C;" parent="1" source="int4" target="integration" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="personnel" value="Персонал" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;" parent="1" vertex="1">
+          <mxGeometry x="930" y="560" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_pers_main" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#7B1FA2;" parent="1" source="personnel" target="main_problem" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pers1" value="• Нет опыта с микросервисами" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;" parent="1" vertex="1">
+          <mxGeometry x="740" y="615" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_pers1" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#7B1FA2;" parent="1" source="pers1" target="personnel" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pers2" value="• Нехватка DevOps компетенций" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;" parent="1" vertex="1">
+          <mxGeometry x="740" y="655" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_pers2" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#7B1FA2;" parent="1" source="pers2" target="personnel" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pers3" value="• Нет архитектора микросервисов" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;" parent="1" vertex="1">
+          <mxGeometry x="740" y="695" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_pers3" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#7B1FA2;" parent="1" source="pers3" target="personnel" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pers4" value="• Сопротивление изменениям" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;" parent="1" vertex="1">
+          <mxGeometry x="740" y="735" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_pers4" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#7B1FA2;" parent="1" source="pers4" target="personnel" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="processes" value="Процессы" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#D32F2F;" parent="1" vertex="1">
+          <mxGeometry x="1339" y="700" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_proc_main" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#D32F2F;" parent="1" source="processes" target="main_problem" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="proc1" value="• Ручной экспорт данных" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#D32F2F;" parent="1" vertex="1">
+          <mxGeometry x="1110" y="750" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_proc1" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#D32F2F;" parent="1" source="proc1" target="processes" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="proc2" value="• Нет автоматизированного CI/CD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#D32F2F;" parent="1" vertex="1">
+          <mxGeometry x="1110" y="790" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_proc2" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#D32F2F;" parent="1" source="proc2" target="processes" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="proc3" value="• Нет автотестов" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#D32F2F;" parent="1" vertex="1">
+          <mxGeometry x="1110" y="830" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_proc3" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#D32F2F;" parent="1" source="proc3" target="processes" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="proc4" value="• Нет централизованного мониторинга" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#D32F2F;" parent="1" vertex="1">
+          <mxGeometry x="1110" y="870" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_proc4" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;strokeColor=#D32F2F;" parent="1" source="proc4" target="processes" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
