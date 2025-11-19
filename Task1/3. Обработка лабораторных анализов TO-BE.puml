@@ -1,0 +1,189 @@
+@startuml Laboratory result process TO-BE
+title Dataflow Diagram TO-BE: Обработка лабораторных анализов (целевое состояние)
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam database {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam actor {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam node {
+  BackgroundColor #F0F0F0
+  BorderColor Black
+}
+
+' === УРОВЕНЬ 1: ВНЕШНИЕ СУЩНОСТИ ===
+actor "Лаборатория" as lab
+
+' === УРОВЕНЬ 2: ШЛЮЗ И АУТЕНТИФИКАЦИЯ ===
+node "1. API Gateway\n(TLS 1.3)" as api_gateway
+node "2. IAM Система\n(RBAC)" as iam
+
+' === УРОВЕНЬ 3: БИЗНЕС-СЕРВИСЫ ===
+rectangle "6. Сервис пациентов" as patient_group {
+  process "Сервис пациентов\n(RBAC)" as patient_service
+  database "База пациентов\n(шифрование)" as patient_db
+}
+
+rectangle "11. Сервис интеграции\nс лабораториями" as integration_group {
+  process "API для лабораторий\n(валидация контрактов)" as lab_api
+  database "Кэш сессий\nинтеграции" as session_cache
+}
+
+rectangle "7. Сервис документов" as doc_group {
+  process "Сервис документов\n(RBAC)" as doc_service
+  database "Хранилище документов\n(шифрование)" as doc_store
+}
+
+' === УРОВЕНЬ 4: DATA CATALOG И ВЕРСИОНИРОВАНИЕ ===
+rectangle "8. Nessie Data Catalog" as nessie_group {
+  process "Nessie\nВерсионирование" as nessie
+  database "Метаданные\nи коммиты" as metadata_db
+}
+
+' === УРОВЕНЬ 5: МОНИТОРИНГ И АНАЛИТИКА ===
+rectangle "10. Система мониторинга" as monitoring_group {
+  process "Система мониторинга\n(аудит, алертинг)" as monitoring_system
+  database "Логи действий\n(аудит)" as audit_logs
+}
+
+database "Data Lake\n(BI, ML, AI)" as data_lake
+
+' === ВЕРТИКАЛЬНОЕ РАСПОЛОЖЕНИЕ ===
+lab -[hidden]down- api_gateway
+api_gateway -[hidden]down- patient_group
+patient_group -[hidden]down- nessie_group
+nessie_group -[hidden]down- monitoring_group
+monitoring_group -[hidden]down- data_lake
+
+api_gateway -[hidden]- integration_group
+integration_group -[hidden]down- nessie_group
+
+api_gateway -[hidden]- doc_group
+doc_group -[hidden]down- nessie_group
+
+iam -[hidden]right- api_gateway
+
+' === ВНУТРЕННИЕ СВЯЗИ ===
+lab_api --> session_cache
+patient_service --> patient_db
+doc_service --> doc_store
+monitoring_system --> audit_logs
+nessie --> metadata_db
+
+' === ВЕРТИКАЛЬНЫЕ ПОТОКИ ДАННЫХ ===
+
+' Уровень 1 -> 2: Интеграция с лабораторией
+lab --> api_gateway : **Результаты анализов**\n<color:#FF4444>Зашифрованные данные исследований</color>\n<color:#44AAFF>Идентификатор пациента</color>
+note on link: TLS 1.3, API Key
+
+' Уровень 2 -> 3: Маршрутизация и аутентификация
+api_gateway --> iam
+note on link: <b>1→2.</b> Проверка прав доступа лаборатории
+
+api_gateway --> lab_api
+note on link: <b>1→11.</b> Валидация API-контракта
+
+' Уровень 3 -> 3: Обработка данных лаборатории
+lab_api --> patient_service
+note on link: <b>11→6.</b> <color:#FF4444>Результаты лабораторных исследований</color>\nИзолированные данные по пациентам
+
+lab_api --> doc_service
+note on link: <b>11→7.</b> <color:#FF4444>Результаты лабораторных исследований</color>\nАвтоматическое сохранение документов
+
+' Уровень 3 -> 4: Версионирование данных
+patient_service -down-> nessie
+note on link: <b>6→8.</b> Данные анализов с тегами конфиденциальности
+
+doc_service -down-> nessie
+note on link: <b>7→8.</b> Документы анализов с тегами доступа
+
+' Уровень 4 -> 3: Политики доступа
+nessie -up-> patient_service
+note on link: <b>8→6.</b> Политики изоляции данных пациентов
+
+nessie -up-> doc_service
+note on link: <b>8→7.</b> Политики доступа к документам
+
+' Уровень 3 -> 5: Мониторинг
+patient_service -down-> monitoring_system
+note on link: <b>6→10.</b> Логи доступа к данным анализов
+
+doc_service -down-> monitoring_system
+note on link: <b>7→10.</b> Логи работы с документами
+
+lab_api -down-> monitoring_system
+note on link: <b>11→10.</b> Аудит API-запросов лабораторий
+
+' Уровень 4 -> 5: История изменений
+nessie -down-> monitoring_system
+note on link: <b>8→10.</b> История изменений данных анализов
+
+' Уровень 5 -> 5: Аналитика
+monitoring_system -right-> data_lake
+note on link: <b>10→DL.</b> Агрегированные логи
+
+patient_service -right-> data_lake
+note on link: <b>6→DL.</b> Анонимизированные данные анализов
+
+nessie -right-> data_lake
+note on link: <b>8→DL.</b> Версионированные метаданные
+
+' === ЛЕГЕНДА КЛАССИФИКАЦИИ ДАННЫХ И РЕШЕНИЙ ===
+legend right
+  <b>КЛАССИФИКАЦИЯ ДАННЫХ</b>
+  
+  <color:#FF4444><b>█ ВЫСОКИЙ РИСК (Красный): Особо чувствительные данные</b></color>
+  <color:#FF4444>Результаты лабораторных исследований, медицинские данные</color>
+
+  <color:#FFAA44><b>█ СРЕДНИЙ РИСК (Оранжевый): Персональные данные (PII)</b></color>
+  <color:#FFAA44>ФИО, Дата рождения, Телефон, Email, Адрес</color>
+
+  <color:#44AAFF><b>█ НИЗКИЙ РИСК (Синий): Идентификаторы и бизнес-данные</b></color>
+  <color:#44AAFF>Идентификатор пациента, метаданные</color>
+
+  <b>НОМЕРА СЕРВИСОВ:</b>
+  1. API Gateway
+  2. IAM Система
+  6. Сервис пациентов
+  7. Сервис документов
+  8. Nessie Data Catalog
+  10. Система мониторинга
+  11. Сервис интеграции с лабораториями
+  DL. Data Lake
+
+  <b>РЕАЛИЗОВАННЫЕ МЕРЫ БЕЗОПАСНОСТИ</b>
+
+  <b>Защита API-интеграций:</b>
+  • API-контракты, скрывающие категории конфиденциальных данных
+  • Валидация и санитизация всех входящих данных
+  • Изоляция данных между пациентами на уровне API
+  • Предотвращение горизонтального доступа (пациент→пациент)
+
+  <b>Контроль доступа (RBAC):</b>
+  • Разграничение прав для лабораторий и системных сервисов
+  • Централизованная аутентификация через IAM
+  • Сессионное управление для интеграционных партнеров
+
+  <b>Архитектура по умолчанию:</b>
+  • Масштабируемый подход к новым интеграциям
+  • Единые стандарты валидации API-контрактов
+  • Автоматическая классификация и тегирование данных
+  • Готовность к будущим интеграциям с партнерами
+
+  <b>Мониторинг и соответствие:</b>
+  • Сквозной аудит всех API-запросов
+  • Мониторинг попыток несанкционированного доступа
+  • Версионирование данных для compliance
+  • Data Lake для аналитики с псевдонимизацией
+end legend
+
+@enduml

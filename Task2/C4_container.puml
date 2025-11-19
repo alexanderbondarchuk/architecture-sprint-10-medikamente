@@ -1,0 +1,126 @@
+@startuml
+!include https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Container.puml
+
+Person(patient, "Пациент", "Пользователь медицинских услуг")
+Person(doctor, "Врач", "Медицинский специалист")
+Person(reception, "Сотрудник ресепшена", "Административный персонал")
+Person(cashier, "Кассир", "Финансовый персонал")
+Person(bookkeeper, "Бухгалтер", "Бухгалтерский персонал")
+Person(warehouse, "Складской сотрудник", "Складской персонал")
+
+System_Boundary(medical_system, "Медицинская информационная система") {
+    Container(api_gateway, "API Gateway", "TLS 1.3", "Единая точка входа")
+    Container(iam_system, "IAM System", "RBAC", "Управление доступом")
+    
+    Container(patient_portal, "Портал пациентов", "Web Application", "Личный кабинет пациента")
+    Container(staff_portal, "Портал сотрудников", "Web Application", "Рабочее место сотрудников")
+    
+    Container(booking_service, "Сервис записи", "Microservice", "Управление расписанием")
+    ContainerDb(booking_db, "База записей", "Database", "Шифрование")
+    
+    Container(patient_service, "Сервис пациентов", "Microservice", "Управление данными пациентов")
+    ContainerDb(patient_db, "База пациентов", "Database", "Шифрование PII")
+    
+    Container(document_service, "Сервис документов", "Microservice", "Управление медицинскими документами")
+    ContainerDb(document_store, "Хранилище документов", "Object Storage", "Шифрование")
+    
+    Container(lab_integration, "Сервис интеграции с лабораториями", "API Gateway", "Интеграция с лабораториями")
+    
+    Container(data_catalog, "Nessie Data Catalog", "Data Catalog", "Версионирование метаданных")
+    ContainerDb(metadata_db, "Метаданные", "Database", "Хранение версий")
+    
+    Container(notification_service, "Сервис уведомлений", "Message Queue", "Управление уведомлениями")
+    
+    Container(monitoring_system, "Система мониторинга", "Monitoring", "Аудит и алертинг")
+    ContainerDb(audit_logs, "Логи действий", "Database", "Неизменяемые логи")
+}
+
+' === АНАЛИТИЧЕСКИЙ СЛОЙ PRIVACY BY DESIGN ===
+System_Boundary(analytics_layer, "Аналитический слой Privacy by Design") {
+    Container(data_anonymization, "Сервис анонимизации", "Processing Engine", "Псевдонимизация данных")
+    ContainerDb(data_lake, "Data Lake", "Data Warehouse", "Анонимизированные данные для BI, ML, AI")
+}
+
+System_Ext(laboratory, "Лаборатория", "Внешняя медицинская лаборатория")
+System_Ext(kkm, "ККМ", "Контрольно-кассовая машина")
+System_Ext(accounting_system, "1С:Бухгалтерия", "Бухгалтерская система")
+System_Ext(warehouse_system, "1С:Склад", "Складская система")
+
+' Основные связи из TO-BE диаграмм
+patient --> api_gateway
+doctor --> api_gateway
+reception --> api_gateway
+cashier --> api_gateway
+bookkeeper --> api_gateway
+warehouse --> api_gateway
+
+api_gateway --> iam_system
+api_gateway --> patient_portal
+api_gateway --> staff_portal
+
+patient_portal --> booking_service
+patient_portal --> patient_service
+patient_portal --> document_service
+
+staff_portal --> booking_service
+staff_portal --> patient_service
+staff_portal --> document_service
+
+booking_service --> booking_db
+patient_service --> patient_db
+document_service --> document_store
+
+laboratory --> lab_integration
+lab_integration --> patient_service
+lab_integration --> document_service
+
+booking_service --> data_catalog
+patient_service --> data_catalog
+document_service --> data_catalog
+data_catalog --> metadata_db
+
+booking_service --> notification_service
+notification_service --> patient
+
+booking_service --> monitoring_system
+patient_service --> monitoring_system
+document_service --> monitoring_system
+monitoring_system --> audit_logs
+
+' Интеграции с финансовыми системами
+cashier --> patient_service
+cashier --> accounting_system
+kkm --> accounting_system
+accounting_system --> patient_service
+
+warehouse --> warehouse_system
+warehouse_system --> accounting_system
+
+' === ПОТОКИ В АНАЛИТИЧЕСКИЙ СЛОЙ ===
+patient_service --> data_anonymization : "Анонимизированные\nданные пациентов"
+booking_service --> data_anonymization : "Агрегированные\nданные записей"
+monitoring_system --> data_anonymization : "Анонимизированные\nлоги"
+
+data_anonymization --> data_lake : "Защищенные данные\nдля аналитики"
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Container Diagram: Целевое состояние с аналитическим слоем Privacy by Design
+
+note right of analytics_layer
+  <b>Аналитический слой обеспечивает:</b>
+  • Безопасную аналитику медицинских данных
+  • Автоматическую псевдонимизацию PII
+  • Подготовку данных для BI, ML, AI систем
+  • Соблюдение принципов Privacy by Design
+end note
+
+note right of data_anonymization
+  <b>Принципы обработки:</b>
+  • Data Minimization - только необходимые данные
+  • Purpose Limitation - только для заявленных целей
+  • Storage Limitation - ограниченное время хранения
+  • Integrity & Confidentiality - защита целостности
+end note
+
+@enduml
