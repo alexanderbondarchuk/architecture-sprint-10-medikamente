@@ -1,5 +1,5 @@
 @startuml Laboratory result process TO-BE
-title Dataflow Diagram TO-BE: Процесс обработки лабораторных анализов (целевое состояние)
+title Dataflow Diagram TO-BE: Обработка лабораторных анализов (целевое состояние)
 
 skinparam defaultFontName Arial
 skinparam defaultFontSize 12

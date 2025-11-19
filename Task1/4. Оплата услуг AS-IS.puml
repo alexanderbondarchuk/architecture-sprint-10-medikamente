@@ -1,5 +1,5 @@
 @startuml Payment process AS-IS
-title Dataflow Diagram AS-IS: Процесс оплаты услуг (текущее состояние)
+title Dataflow Diagram AS-IS: Оплата услуг (текущее состояние)
 
 skinparam defaultFontName Arial
 skinparam defaultFontSize 12

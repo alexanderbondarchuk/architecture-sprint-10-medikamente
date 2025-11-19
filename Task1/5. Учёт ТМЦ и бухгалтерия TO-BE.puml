@@ -1,0 +1,190 @@
+@startuml Warehouse and Accounting process TO-BE
+title Dataflow Diagram TO-BE: Учёт ТМЦ и бухгалтерия (целевое состояние)
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam database {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam actor {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam node {
+  BackgroundColor #F0F0F0
+  BorderColor Black
+}
+skinparam component {
+  BackgroundColor White
+  BorderColor Black
+}
+
+' === УРОВЕНЬ 1: ВНЕШНИЕ СУЩНОСТИ ===
+actor "Складской сотрудник" as warehouse_worker
+actor "Бухгалтер" as accountant
+
+' === УРОВЕНЬ 2: АУТЕНТИФИКАЦИЯ ===
+node "2. IAM Система\n(RBAC)" as iam
+
+' === УРОВЕНЬ 3: БИЗНЕС-СЕРВИСЫ ===
+rectangle "12. 1С:Бухгалтерия\nпредприятия" as accounting_system {
+  process "Бухгалтерский\nучёт" as accounting_process
+  database "База данных 1С\n(шифрование)" as accounting_db
+}
+
+rectangle "13. 1С: Складской учёт" as warehouse_system {
+  process "Учёт ТМЦ" as warehouse_process
+  database "База ТМЦ\n(шифрование)" as warehouse_db
+}
+
+' === УРОВЕНЬ 4: DATA CATALOG И ВЕРСИОНИРОВАНИЕ ===
+rectangle "8. Nessie Data Catalog" as nessie_group {
+  process "Nessie\nВерсионирование" as nessie
+  database "Метаданные\nи коммиты" as metadata_db
+}
+
+' === УРОВЕНЬ 5: МОНИТОРИНГ И АНАЛИТИКА ===
+rectangle "10. Система мониторинга" as monitoring_group {
+  process "Система мониторинга\n(аудит, алертинг)" as monitoring_system
+  database "Логи действий\n(аудит)" as audit_logs
+}
+
+database "Data Lake\n(BI, ML, AI)" as data_lake
+
+' === ВЕРТИКАЛЬНОЕ РАСПОЛОЖЕНИЕ ===
+warehouse_worker -[hidden]- accountant
+warehouse_worker -[hidden]down- warehouse_system
+accountant -[hidden]down- accounting_system
+warehouse_system -[hidden]down- accounting_system
+accounting_system -[hidden]down- nessie_group
+nessie_group -[hidden]down- monitoring_group
+monitoring_group -[hidden]down- data_lake
+
+iam -[hidden]right- warehouse_system
+
+' === ВНУТРЕННИЕ СВЯЗИ ===
+warehouse_process --> warehouse_db
+accounting_process --> accounting_db
+monitoring_system --> audit_logs
+nessie --> metadata_db
+
+' === ВЕРТИКАЛЬНЫЕ ПОТОКИ ДАННЫХ ===
+
+' Уровень 1 -> 3: Прямая работа с сервисами
+warehouse_worker --> warehouse_process
+note on link: <b>Сотрудник→13.</b> <color:#44AAFF>Наименование, количество, стоимость</color>\n<color:#44AAFF>Приход/расход, остатки</color>\nУчёт ТМЦ
+
+accountant --> accounting_process
+note on link: <b>Бухгалтер→12.</b> <color:#44AAFF>График работы, ставки, часы</color>\n<color:#FFAA44>ФИО сотрудников</color>\nНачисления зарплаты
+
+accountant --> accounting_process
+note on link: <b>Бухгалтер→12.</b> <color:#44AAFF>Финансовые данные</color>\nНалоговая отчётность
+
+' Уровень 3 -> 2: Проверка прав доступа
+warehouse_process --> iam
+note on link: <b>13→2.</b> Проверка прав сотрудника
+
+accounting_process --> iam
+note on link: <b>12→2.</b> Проверка прав бухгалтера
+
+' Уровень 3 -> 3: Синхронизация данных
+warehouse_process --> accounting_process
+note on link: <b>13→12.</b> <color:#44AAFF>Складские операции, стоимость ТМЦ</color>\nАвтоматическая синхронизация
+
+' Уровень 3 -> 4: Версионирование данных
+warehouse_process -down-> nessie
+note on link: <b>13→8.</b> Данные ТМЦ с тегами
+
+accounting_process -down-> nessie
+note on link: <b>12→8.</b> Финансовые и кадровые данные с тегами
+
+' Уровень 4 -> 3: Политики доступа
+nessie -up-> warehouse_process
+note on link: <b>8→13.</b> Политики управления ТМЦ
+
+nessie -up-> accounting_process
+note on link: <b>8→12.</b> Финансовые и кадровые политики
+
+' Уровень 3 -> 5: Мониторинг
+warehouse_process -down-> monitoring_system
+note on link: <b>13→10.</b> Логи складских операций
+
+accounting_process -down-> monitoring_system
+note on link: <b>12→10.</b> Логи финансовых и кадровых операций
+
+' Уровень 4 -> 5: История изменений
+nessie -down-> monitoring_system
+note on link: <b>8→10.</b> История изменений данных
+
+' Уровень 5 -> 5: Аналитика
+monitoring_system -right-> data_lake
+note on link: <b>10→DL.</b> Агрегированные логи
+
+warehouse_process -right-> data_lake
+note on link: <b>13→DL.</b> Анонимизированные данные ТМЦ
+
+accounting_process -right-> data_lake
+note on link: <b>12→DL.</b> Агрегированные финансовые данные
+
+nessie -right-> data_lake
+note on link: <b>8→DL.</b> Версионированные метаданные
+
+' === ЛЕГЕНДА КЛАССИФИКАЦИИ ДАННЫХ И РЕШЕНИЙ ===
+legend right
+  <b>КЛАССИФИКАЦИЯ ДАННЫХ</b>
+  
+  <color:#FFAA44><b>█ СРЕДНИЙ РИСК (Оранжевый): Персональные данные (PII)</b></color>
+  <color:#FFAA44>ФИО сотрудников, банковские реквизиты</color>
+
+  <color:#44AAFF><b>█ НИЗКИЙ РИСК (Синий): Бизнес-данные</b></color>
+  <color:#44AAFF>Наименование ТМЦ, количество, стоимость, остатки</color>
+  <color:#44AAFF>Приход/расход, бухгалтерские проводки, дата операций</color>
+  <color:#44AAFF>График работы, ставки, часы, налоговая отчётность</color>
+
+  <b>НОМЕРА СЕРВИСОВ:</b>
+  2. IAM Система
+  8. Nessie Data Catalog
+  10. Система мониторинга
+  12. 1С:Бухгалтерия предприятия
+  13. 1С: Складской учёт
+  DL. Data Lake
+
+  <b>УСТРАНЁННЫЕ ПРОБЛЕМЫ БЕЗОПАСНОСТИ</b>
+
+  <b>Безопасное хранение данных:</b>
+  • Замена файловых баз 1С на защищённые сервисы с шифрованием
+  • Централизованное управление доступом через IAM систему
+  • Изоляция персональных данных сотрудников от бизнес-данных
+
+  <b>Контроль доступа (RBAC):</b>
+  • Прямая проверка прав доступа сервисами 12 и 13 через IAM
+  • Разграничение прав для складских сотрудников и бухгалтеров
+  • Централизованная аутентификация сотрудников
+
+  <b>Аудит и мониторинг:</b>
+  • Сквозной аудит всех складских и финансовых операций
+  • Мониторинг изменений в учёте ТМЦ и начислениях зарплаты
+  • Неизменяемые логи действий сотрудников
+
+  <b>Защита персональных данных:</b>
+  • Шифрование PII сотрудников в базах данных
+  • Минимизация передаваемых персональных данных
+  • Псевдонимизация для аналитических целей
+
+  <b>Версионирование и целостность данных:</b>
+  • Git-like версионирование данных ТМЦ и финансовых операций
+  • Контроль изменений в складском и бухгалтерском учёте
+  • Полная история операций для внутреннего аудита
+
+  <b>Интеграционная безопасность:</b>
+  • Автоматическая синхронизация между системами
+  • Резервное копирование и восстановление данных
+  • Шифрование передаваемых данных между сервисами
+end legend
+
+@enduml

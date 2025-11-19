@@ -1,0 +1,204 @@
+@startuml Payment process TO-BE
+title Dataflow Diagram TO-BE: Оплата услуг (целевое состояние)
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam database {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam actor {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam node {
+  BackgroundColor #F0F0F0
+  BorderColor Black
+}
+skinparam component {
+  BackgroundColor White
+  BorderColor Black
+}
+
+' === УРОВЕНЬ 1: ВНЕШНИЕ СУЩНОСТИ ===
+actor "Пациент" as patient
+actor "Кассир" as cashier
+
+' === УРОВЕНЬ 2: АУТЕНТИФИКАЦИЯ ===
+node "2. IAM Система\n(RBAC)" as iam
+
+' === УРОВЕНЬ 3: БИЗНЕС-СЕРВИСЫ ===
+rectangle "6. Сервис пациентов" as patient_group {
+  process "Сервис пациентов\n(RBAC)" as patient_service
+  database "База пациентов\n(шифрование)" as patient_db
+}
+
+rectangle "12. 1С:Бухгалтерия\nпредприятия" as accounting_system {
+  process "Бухгалтерский\nучёт" as accounting_process
+  database "База данных 1С\n(шифрование)" as accounting_db
+}
+
+' === УРОВЕНЬ 4: ПЛАТЕЖНЫЕ СИСТЕМЫ ===
+component "Кассовый аппарат (ККМ)" as kkm
+
+' === УРОВЕНЬ 5: DATA CATALOG И ВЕРСИОНИРОВАНИЕ ===
+rectangle "8. Nessie Data Catalog" as nessie_group {
+  process "Nessie\nВерсионирование" as nessie
+  database "Метаданные\nи коммиты" as metadata_db
+}
+
+' === УРОВЕНЬ 6: МОНИТОРИНГ И АНАЛИТИКА ===
+rectangle "10. Система мониторинга" as monitoring_group {
+  process "Система мониторинга\n(аудит, алертинг)" as monitoring_system
+  database "Логи действий\n(аудит)" as audit_logs
+}
+
+database "Data Lake\n(BI, ML, AI)" as data_lake
+
+' === ВЕРТИКАЛЬНОЕ РАСПОЛОЖЕНИЕ ===
+patient -[hidden]- cashier
+cashier -[hidden]down- patient_group
+patient_group -[hidden]down- accounting_system
+accounting_system -[hidden]down- nessie_group
+nessie_group -[hidden]down- monitoring_group
+monitoring_group -[hidden]down- data_lake
+
+cashier -[hidden]- kkm
+kkm -[hidden]down- accounting_system
+
+iam -[hidden]right- patient_group
+
+' === ВНУТРЕННИЕ СВЯЗИ ===
+patient_service --> patient_db
+accounting_process --> accounting_db
+monitoring_system --> audit_logs
+nessie --> metadata_db
+
+' === ВЕРТИКАЛЬНЫЕ ПОТОКИ ДАННЫХ ===
+
+' Уровень 1: Оплата услуг
+patient --> cashier : **Оплата услуг**\n<color:#44AAFF>Услуга, сумма</color>\n<color:#FFAA44>ФИО, Дата рождения</color>
+
+' Уровень 1 -> 3: Работа кассира с системами
+cashier --> patient_service
+note on link: <b>Кассир→6.</b> <color:#FFAA44>ФИО, Дата рождения</color>\nПоиск пациента и услуг
+
+cashier --> accounting_process
+note on link: <b>Кассир→12.</b> <color:#44AAFF>Сумма платежа, услуга</color>\nПроведение оплаты
+
+' Уровень 3 -> 2: Проверка прав доступа
+patient_service --> iam
+note on link: <b>6→2.</b> Проверка прав кассира
+
+accounting_process --> iam
+note on link: <b>12→2.</b> Проверка прав кассира
+
+' Уровень 1 -> 4 -> 3: Наличная оплата через ККМ
+cashier --> kkm : **Наличная оплата**\n<color:#44AAFF>Сумма платежа</color>
+kkm --> accounting_process
+note on link: <b>ККМ→12.</b> <color:#44AAFF>Фиксация наличного платежа</color>\n<color:#FFAA44>ФИО пациента</color>
+
+' Уровень 3 -> 3: Синхронизация данных
+patient_service --> accounting_process
+note on link: <b>6→12.</b> <color:#FFAA44>ID пациента</color>\n<color:#44AAFF>Консультационные услуги, назначенные процедуры, анализы</color>\nСинхронизация
+
+' Уровень 3 -> 5: Версионирование данных
+patient_service -down-> nessie
+note on link: <b>6→8.</b> Данные пациентов с тегами
+
+accounting_process -down-> nessie
+note on link: <b>12→8.</b> Финансовые данные с тегами
+
+' Уровень 5 -> 3: Политики доступа
+nessie -up-> patient_service
+note on link: <b>8→6.</b> Политики на основе тегов
+
+nessie -up-> accounting_process
+note on link: <b>8→12.</b> Финансовые политики
+
+' Уровень 3 -> 6: Мониторинг
+patient_service -down-> monitoring_system
+note on link: <b>6→10.</b> Логи доступа к данным
+
+accounting_process -down-> monitoring_system
+note on link: <b>12→10.</b> Логи финансовых операций
+
+kkm -down-> monitoring_system
+note on link: Мониторинг кассовых операций
+
+nessie -down-> monitoring_system
+note on link: <b>8→10.</b> История изменений
+
+' Уровень 6 -> 6: Аналитика
+monitoring_system -right-> data_lake
+note on link: <b>10→DL.</b> Агрегированные логи
+
+patient_service -right-> data_lake
+note on link: <b>6→DL.</b> Анонимизированные данные
+
+accounting_process -right-> data_lake
+note on link: <b>12→DL.</b> Агрегированные финансовые данные
+
+nessie -right-> data_lake
+note on link: <b>8→DL.</b> Версионированные метаданные
+
+' === ЛЕГЕНДА КЛАССИФИКАЦИИ ДАННЫХ И РЕШЕНИЙ ===
+legend right
+  <b>КЛАССИФИКАЦИЯ ДАННЫХ</b>
+  
+  <color:#FF4444><b>█ ВЫСОКИЙ РИСК (Красный): Особо чувствительные данные</b></color>
+  <color:#FF4444>Медицинская история, диагнозы, анализы, скан паспорта</color>
+
+  <color:#FFAA44><b>█ СРЕДНИЙ РИСК (Оранжевый): Персональные данные (PII)</b></color>
+  <color:#FFAA44>ФИО, Дата рождения, Телефон, Email, Адрес</color>
+
+  <color:#44AAFF><b>█ НИЗКИЙ РИСК (Синий): Бизнес-данные</b></color>
+  <color:#44AAFF>Сумма платежа, услуга, бухгалтерские проводки</color>
+  <color:#44AAFF>Консультационные услуги, назначенные процедуры, анализы</color>
+
+  <b>НОМЕРА СЕРВИСОВ:</b>
+  2. IAM Система
+  6. Сервис пациентов
+  8. Nessie Data Catalog
+  10. Система мониторинга
+  12. 1С:Бухгалтерия предприятия
+  DL. Data Lake
+
+  <b>РЕАЛИЗОВАННЫЕ МЕРЫ БЕЗОПАСНОСТИ</b>
+
+  <b>Безопасность платежных операций:</b>
+  • Прямая работа кассира с системами через защищённые интерфейсы
+  • Интеграция ККМ с 1С:Бухгалтерией для фиксации наличных платежей
+  • Изоляция платежных данных от медицинской информации
+
+  <b>Контроль доступа (RBAC):</b>
+  • Разграничение прав для кассиров через IAM систему
+  • Прямая проверка прав доступа сервисами 6 и 12
+  • Централизованная аутентификация кассиров
+
+  <b>Аудит и мониторинг:</b>
+  • Сквозной аудит всех финансовых операций
+  • Мониторинг кассовых операций через ККМ
+  • Неизменяемые логи действий кассиров
+
+  <b>Защита персональных данных:</b>
+  • Шифрование PII в базах данных пациентов и бухгалтерии
+  • Минимизация передаваемых персональных данных
+  • Псевдонимизация для аналитических целей
+
+  <b>Версионирование и целостность данных:</b>
+  • Git-like версионирование финансовых и пациентских данных
+  • Контроль изменений в информации об услугах и платежах
+  • Полная история финансовых операций для аудита
+
+  <b>Интеграционная безопасность:</b>
+  • Автоматическая синхронизация между системами
+  • Резервное копирование финансовых данных
+  • Шифрование передаваемых данных между сервисами
+end legend
+
+@enduml
